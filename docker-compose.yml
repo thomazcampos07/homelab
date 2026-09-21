@@ -1,0 +1,16 @@
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:2026.09.0
+    network_mode: host
+    environment:
+      TZ: America/Sao_Paulo
+      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
+      FTLCONF_dns_upstreams: 1.1.1.1;1.0.0.1
+      FTLCONF_dns_listeningMode: LOCAL
+      FTLCONF_dns_interface: wlan0
+      FTLCONF_ntp_ipv4_active: "false"
+      FTLCONF_ntp_ipv6_active: "false"
+    volumes:
+      - ./etc-pihole:/etc/pihole
+    restart: unless-stopped
