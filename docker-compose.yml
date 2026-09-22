@@ -11,6 +11,7 @@ services:
       FTLCONF_dns_interface: wlan0
       FTLCONF_ntp_ipv4_active: "false"
       FTLCONF_ntp_ipv6_active: "false"
+      FTLCONF_database_maxDBdays: "30"
     volumes:
       - ./etc-pihole:/etc/pihole
     restart: unless-stopped
