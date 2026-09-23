@@ -6,7 +6,7 @@ services:
     environment:
       TZ: America/Sao_Paulo
       FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
-      FTLCONF_dns_upstreams: 1.1.1.1;1.0.0.1
+      FTLCONF_dns_upstreams: 127.0.0.1#5335
       FTLCONF_dns_listeningMode: LOCAL
       FTLCONF_dns_interface: wlan0
       FTLCONF_ntp_ipv4_active: "false"
@@ -14,4 +14,20 @@ services:
       FTLCONF_database_maxDBdays: "30"
     volumes:
       - ./etc-pihole:/etc/pihole
+    restart: unless-stopped
+    depends_on:
+      - unbound
+
+  unbound:
+    container_name: unbound
+    image: klutchell/unbound:v1.26.1
+    # Publicado apenas em 127.0.0.1: o Pi-hole alcanca pelo host, mas a LAN
+    # nao enxerga. Resolver recursivo exposto vira vetor de amplificacao.
+    ports:
+      - "127.0.0.1:5335:53/udp"
+      - "127.0.0.1:5335:53/tcp"
+    volumes:
+      - ./unbound/unbound.conf:/etc/unbound/unbound.conf:ro
+      # Gravavel: o unbound atualiza o trust anchor sozinho (RFC 5011).
+      - ./unbound/keys:/etc/unbound/keys
     restart: unless-stopped

@@ -1,7 +1,12 @@
 # Pi-hole em Docker — Raspberry Pi 4
 
-Configuração do Pi-hole rodando em container no Raspberry Pi 4 da rede local
+Stack de DNS da casa: **Pi-hole** (bloqueio de anúncios) com **Unbound**
+(resolvedor recursivo) como upstream, em containers no Raspberry Pi 4 da rede
+local
 (`192.168.15.5`, IP reservado no roteador, conectado por Wi-Fi em `wlan0`).
+
+O caminho de uma consulta: cliente → Pi-hole (filtra) → Unbound (resolve a
+partir dos servidores raiz) → internet. Nenhum resolvedor de terceiros no meio.
 O sistema fica num cartão SD.
 
 Este repositório guarda a **receita completa**: tanto o preparo do sistema
@@ -29,12 +34,18 @@ O painel fica em `http://192.168.15.5/admin`.
    ./setup-host.sh
    sudo reboot
    ```
-4. Criar o `.env` com a senha do painel e subir:
+4. Gerar o trust anchor do DNSSEC (não é versionado, cada instalação gera o seu):
+   ```bash
+   mkdir -p unbound/keys
+   docker run --rm -v "$PWD/unbound/keys:/keys"      --entrypoint unbound-anchor klutchell/unbound:v1.26.1 -a /keys/root.key
+   ```
+   Sai com código 1 quando cria a chave — é o comportamento normal.
+5. Criar o `.env` com a senha do painel e subir:
    ```bash
    cd ~/docker/pihole && cp .env.example .env
    docker compose up -d
    ```
-5. Apontar o DNS dos clientes (ou o DHCP do roteador) para o IP do Pi
+6. Apontar o DNS dos clientes (ou o DHCP do roteador) para o IP do Pi
 
 A lista de bloqueio é reconstruída sozinha a partir da adlist padrão — não é
 preciso restaurar backup. Se houver um Teleporter com customizações a recuperar,
@@ -56,6 +67,16 @@ a chave pública em `~/.ssh/authorized_keys`.
 - **log2ram com 64 MB** — mantém `/var/log` em RAM e sincroniza com o disco
   periodicamente. Cobre o journald, mas **não** cobre o banco do Pi-hole nem os
   logs do Docker, que ficam fora de `/var/log`.
+- **Unbound como upstream** (`127.0.0.1#5335`) — resolve recursivamente a partir
+  dos servidores raiz em vez de perguntar à Cloudflare, então nenhum terceiro vê
+  o histórico de navegação da casa. Valida DNSSEC: responde SERVFAIL a
+  assinaturas adulteradas em vez de repassá-las.
+- **Unbound publicado só em `127.0.0.1:5335`** — um resolvedor recursivo aberto
+  à rede pode ser abusado em ataques de amplificação. A porta 5335 é a convenção
+  do Pi-hole; 5353 não serve porque o avahi já a ocupa.
+- **`do-daemonize: no` no unbound.conf** — a imagem é distroless e chama o
+  binário direto. Sem isso o unbound faz fork, o processo principal termina e o
+  container morre em loop com exit 0.
 - **NTP desligado** — o host já sincroniza a hora via `systemd-timesyncd`;
   deixar o servidor NTP do Pi-hole ativo só disputaria a porta 123.
 - **`FTLCONF_dns_interface: wlan0`** — o Pi está em Wi-Fi. Se migrar para cabo,
