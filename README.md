@@ -77,6 +77,11 @@ a chave pública em `~/.ssh/authorized_keys`.
 - **`do-daemonize: no` no unbound.conf** — a imagem é distroless e chama o
   binário direto. Sem isso o unbound faz fork, o processo principal termina e o
   container morre em loop com exit 0.
+- **`Storage=persistent` no journald** (aplicado pelo `setup-host.sh`) — sem
+  isso o log2ram deixa o journal em `/run`, volátil, e todo o histórico some a
+  cada reinício. Com a correção o journal fica no tmpfs e o log2ram copia para
+  `/var/hdd.log` no desligamento e uma vez por dia. O limite de 32 MB existe
+  para o journal não encher os 64 MB do tmpfs.
 - **NTP desligado** — o host já sincroniza a hora via `systemd-timesyncd`;
   deixar o servidor NTP do Pi-hole ativo só disputaria a porta 123.
 - **`FTLCONF_dns_interface: wlan0`** — o Pi está em Wi-Fi. Se migrar para cabo,

@@ -33,6 +33,23 @@ else
   echo "    log2ram configurado com ${LOG2RAM_SIZE} (ativa apos reboot)."
 fi
 
+# O journald usa Storage=auto, que so grava em disco se /var/log/journal existir
+# quando ele sobe. Como o log2ram monta /var/log como tmpfs durante o boot, o
+# journald perde a corrida e cai para /run (volatil) — e o historico some a cada
+# reinicio. Forcar persistent resolve sem abrir mao do log2ram: o journal fica
+# em RAM e o log2ram sincroniza para /var/hdd.log.
+echo "==> Garantindo journal persistente entre reinicios"
+sudo mkdir -p /etc/systemd/journald.conf.d
+sudo tee /etc/systemd/journald.conf.d/99-persistent.conf >/dev/null <<'CONF'
+[Journal]
+Storage=persistent
+# Teto abaixo do tmpfs do log2ram, senao o journal enche /var/log.
+SystemMaxUse=32M
+CONF
+sudo mkdir -p /var/log/journal
+[ -d /var/hdd.log ] && sudo mkdir -p /var/hdd.log/journal
+sudo systemctl restart systemd-journald
+
 echo
 echo "Sistema pronto. Reinicie para ativar o log2ram e depois suba o Pi-hole:"
 echo "  cd ~/docker/pihole && cp .env.example .env   # defina a senha do painel"
