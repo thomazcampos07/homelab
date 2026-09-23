@@ -50,6 +50,35 @@ sudo mkdir -p /var/log/journal
 [ -d /var/hdd.log ] && sudo mkdir -p /var/hdd.log/journal
 sudo systemctl restart systemd-journald
 
+# O log2ram copia /var/log para disco sem preservar as ACLs que o journald usa
+# para liberar leitura ao grupo adm. Sem isso, os journals restaurados ficam
+# ilegiveis para o usuario e o historico "some" mesmo estando no disco.
+# Entrar no grupo systemd-journal da acesso pelo modo 640, sem depender de ACL.
+if id -nG "$USER" | grep -qw systemd-journal; then
+  echo "==> Usuario ja le o journal, pulando"
+else
+  echo "==> Dando acesso de leitura ao journal"
+  sudo usermod -aG systemd-journal "$USER"
+  echo "    Relogue para o grupo valer."
+fi
+
+# O Raspberry Pi OS nao habilita o controlador de memoria do cgroup por padrao.
+# Sem ele o kernel nao contabiliza memoria por container: docker stats mostra
+# zero, ferramentas de monitoramento nao leem nada e limites de memoria sao
+# silenciosamente ignorados.
+CMDLINE=/boot/firmware/cmdline.txt
+if [ ! -f "$CMDLINE" ]; then
+  echo "==> $CMDLINE nao encontrado, pulando cgroup de memoria"
+elif grep -q 'cgroup_enable=memory' "$CMDLINE"; then
+  echo "==> cgroup de memoria ja habilitado, pulando"
+else
+  echo "==> Habilitando cgroup de memoria"
+  sudo cp "$CMDLINE" "$CMDLINE.bak"
+  # O arquivo precisa continuar com UMA linha: uma quebra aqui impede o boot.
+  sudo sed -i '1 s/$/ cgroup_enable=memory cgroup_memory=1/' "$CMDLINE"
+  echo "    Aplicado (ativa apos reboot). Backup em $CMDLINE.bak"
+fi
+
 echo
 echo "Sistema pronto. Reinicie para ativar o log2ram e depois suba o Pi-hole:"
 echo "  cd ~/docker/pihole && cp .env.example .env   # defina a senha do painel"

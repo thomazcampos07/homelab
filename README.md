@@ -82,6 +82,15 @@ a chave pública em `~/.ssh/authorized_keys`.
   cada reinício. Com a correção o journal fica no tmpfs e o log2ram copia para
   `/var/hdd.log` no desligamento e uma vez por dia. O limite de 32 MB existe
   para o journal não encher os 64 MB do tmpfs.
+- **`cgroup_enable=memory` no cmdline.txt** (aplicado pelo `setup-host.sh`) — o
+  Raspberry Pi OS não habilita o controlador de memória do cgroup por padrão.
+  Sem ele o kernel não contabiliza memória por container: `docker stats` mostra
+  zero, ferramentas de monitoramento não leem nada e limites de memória são
+  ignorados em silêncio. Editar esse arquivo exige cuidado — ele precisa
+  continuar com uma única linha, ou o Pi não inicia.
+- **Usuário no grupo `systemd-journal`** — o log2ram não preserva as ACLs ao
+  restaurar `/var/log`, então os journals antigos voltam ilegíveis. Pelo grupo,
+  o acesso passa a depender só do modo `640`.
 - **NTP desligado** — o host já sincroniza a hora via `systemd-timesyncd`;
   deixar o servidor NTP do Pi-hole ativo só disputaria a porta 123.
 - **`FTLCONF_dns_interface: wlan0`** — o Pi está em Wi-Fi. Se migrar para cabo,
