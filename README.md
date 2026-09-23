@@ -59,6 +59,33 @@ containers. Isso é configurado pelo `setup-host.sh` do repositório
   qualquer pessoa na rede pode se tornar admin — criar logo após subir o hub.
 - O `.env` e os diretórios `data/` e `agent_data/` ficam fora do Git.
 
+## Alertas
+
+São dois mecanismos, e a divisão não é arbitrária.
+
+**Beszel** cobre problemas com o Pi ligado: container parado, CPU, memória,
+disco ou temperatura fora do normal. Configurado em *Settings → Notifications*
+com uma URL Shoutrrr do Telegram, e por sistema no ícone de sino.
+
+**`healthcheck-ping.sh`** cobre o que o Beszel não alcança. Como o hub roda no
+próprio Pi que monitora, ele morre junto com a máquina e não avisa ninguém. O
+script inverte a lógica: envia um sinal de vida a cada 5 minutos para o
+Healthchecks.io, e **o silêncio é que dispara o alerta** — quem avisa está fora
+de casa.
+
+O script não se limita a dizer "estou ligado": ele consulta o DNS antes, e
+sinaliza falha se o Pi-hole não responder. Um Pi ligado com o DNS quebrado dá o
+mesmo prejuízo que um Pi desligado.
+
+Agendamento (cron do usuário, sem privilégios):
+
+```
+*/5 * * * * /home/admin/docker/beszel/healthcheck-ping.sh
+```
+
+Com *Period* de 10 minutos e *Grace Time* de 5 no Healthchecks, há margem para
+duas tentativas antes do alarme — evita alerta falso por falha de rede passageira.
+
 ## Escrita no cartão SD
 
 O histórico é gravado continuamente em SQLite dentro de `data/`. Como o sistema
