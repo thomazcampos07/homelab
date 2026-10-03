@@ -1,0 +1,18 @@
+services:
+  # Nao e um servico continuo: so roda sob demanda, chamado pelo backup.sh via
+  # `docker compose run`. O profile impede que `docker compose up` o suba.
+  rclone:
+    image: rclone/rclone:1.75.1
+    profiles: ["job"]
+    # Roda como admin para o rclone.conf ficar legivel por ele. O passo do tar
+    # sobrescreve com root, porque parte dos dados dos outros containers e do root.
+    user: "1000:1000"
+    environment:
+      XDG_CACHE_HOME: /tmp
+    volumes:
+      - ./rclone:/config/rclone
+      # Fontes do backup, somente leitura
+      - ..:/backup/docker:ro
+      - ./staging:/backup/extra:ro
+      # Onde o arquivo .tar.gz e montado antes do envio
+      - ./out:/out
