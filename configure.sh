@@ -9,6 +9,9 @@ set -euo pipefail
 
 DIR=/home/admin/docker/backup
 FOLDER="Backups Raspberry Pi"
+# Client OAuth proprio (projeto "rclone-pi" no Google Cloud). O compartilhado do
+# rclone esta sendo desativado. O ID nao e segredo; o secret e pedido abaixo.
+CLIENT_ID="<CLIENT_ID>.apps.googleusercontent.com"
 cd "$DIR"
 mkdir -p rclone staging out
 chmod 700 rclone
@@ -17,6 +20,7 @@ chmod 700 rclone
 
 echo "Cole o que o 'rclone authorize' imprimiu no PC (entre ---> e <---End paste):"
 read -r AUTH
+read -rsp "Client secret do Google (o mesmo usado no authorize.ps1): " CLIENT_SECRET; echo
 read -rsp "Senha da criptografia (guarde no gerenciador de senhas): " PASS; echo
 read -rsp "Repita a senha: " PASS2; echo
 [[ "$PASS" == "$PASS2" ]] || { echo "As senhas nao conferem." >&2; exit 1; }
@@ -26,19 +30,16 @@ read -rsp "Repita a senha: " PASS2; echo
 # mesmo recebendo o token, e no Pi nao ha navegador.
 # A senha vai pelo stdin para nao aparecer na lista de processos.
 #
-# Chamado com opcoes em base64, o `rclone authorize` devolve tambem em base64
-# um JSON com client_id, client_secret e o token. Aceita esse formato ou o
-# token JSON puro ({"access_token":...}).
-DRIVE_CREDS=$(printf '%s' "$AUTH" | python3 -c '
+# O `rclone authorize` devolve o token em base64 dentro de um JSON (que NAO
+# traz o client_id/secret, mesmo quando foram passados), ou o token JSON puro.
+# Aceita os dois formatos e extrai so o token.
+DRIVE_TOKEN=$(printf '%s' "$AUTH" | python3 -c '
 import base64, json, sys
 raw = sys.stdin.read().strip()
 d = json.loads(raw if raw.startswith("{") else base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)))
 tok = d.get("token", d) if "access_token" not in d else d
 tok = tok if isinstance(tok, str) else json.dumps(tok)
-for k in ("client_id", "client_secret"):
-    if d.get(k):
-        print(f"{k} = {d[k]}")
-print(f"token = {tok}")
+print(tok)
 ')
 OBSCURED=$(printf '%s' "$PASS" | docker compose run --rm -T rclone obscure -)
 
@@ -49,7 +50,9 @@ cat > rclone/rclone.conf <<CONF
 [gdrive]
 type = drive
 scope = drive.file
-$DRIVE_CREDS
+client_id = $CLIENT_ID
+client_secret = $CLIENT_SECRET
+token = $DRIVE_TOKEN
 
 [pi-backup]
 type = crypt
