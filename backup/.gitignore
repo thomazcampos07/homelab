@@ -1,0 +1,6 @@
+# Segredos e estado local: nunca no Git
+.env
+rclone/
+staging/
+out/
+last-success
