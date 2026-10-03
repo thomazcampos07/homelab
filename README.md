@@ -45,7 +45,8 @@ O painel fica em `http://192.168.15.5/admin`.
    cd ~/docker/pihole && cp .env.example .env
    docker compose up -d
    ```
-6. Apontar o DNS dos clientes (ou o DHCP do roteador) para o IP do Pi
+6. Recadastrar os clientes nomeados: `./clients.sh`
+7. Apontar o DNS dos clientes para o IP do Pi (ver *Quem usa o Pi-hole*)
 
 A lista de bloqueio é reconstruída sozinha a partir da adlist padrão — não é
 preciso restaurar backup. Se houver um Teleporter com customizações a recuperar,
@@ -95,6 +96,18 @@ a chave pública em `~/.ssh/authorized_keys`.
   deixar o servidor NTP do Pi-hole ativo só disputaria a porta 123.
 - **`FTLCONF_dns_interface: wlan0`** — o Pi está em Wi-Fi. Se migrar para cabo,
   trocar para `eth0`.
+
+## Quem usa o Pi-hole
+
+Por escolha, **só alguns aparelhos** passam pelo Pi-hole — o DHCP do roteador
+não distribui o IP do Pi. Cada aparelho aponta o DNS manualmente para
+`192.168.15.5`, sem DNS secundário (um secundário faria parte das consultas
+escapar do bloqueio). Fora de casa, os peers do WireGuard já entregam o Pi-hole
+como DNS.
+
+Os aparelhos têm IP reservado no roteador e são cadastrados no Pi-hole **por
+MAC** pelo `clients.sh`, que é a lista versionada. Para incluir um aparelho,
+editar o array do script e rodar de novo.
 
 ## Comandos do dia a dia
 
