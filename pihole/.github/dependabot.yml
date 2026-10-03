@@ -1,0 +1,13 @@
+# Avisa (via PR) quando sai versao nova das imagens pinadas no compose.
+# Roda no GitHub, nao no Pi. Merge do PR nao faz deploy: depois de aceitar,
+# puxar no Pi e rodar `docker compose pull && docker compose up -d`.
+version: 2
+updates:
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+      timezone: "America/Sao_Paulo"
+    commit-message:
+      prefix: "Atualiza imagem"
