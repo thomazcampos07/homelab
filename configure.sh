@@ -15,8 +15,8 @@ chmod 700 rclone
 
 [[ -f .env ]] || { echo "Crie o .env a partir do .env.example antes." >&2; exit 1; }
 
-echo "Cole o token gerado no PC por 'rclone authorize' (a linha {...}):"
-read -r TOKEN
+echo "Cole o que o 'rclone authorize' imprimiu no PC (entre ---> e <---End paste):"
+read -r AUTH
 read -rsp "Senha da criptografia (guarde no gerenciador de senhas): " PASS; echo
 read -rsp "Repita a senha: " PASS2; echo
 [[ "$PASS" == "$PASS2" ]] || { echo "As senhas nao conferem." >&2; exit 1; }
@@ -25,6 +25,21 @@ read -rsp "Repita a senha: " PASS2; echo
 # remote do Drive, o config create insiste em abrir o fluxo OAuth no navegador
 # mesmo recebendo o token, e no Pi nao ha navegador.
 # A senha vai pelo stdin para nao aparecer na lista de processos.
+#
+# Chamado com opcoes em base64, o `rclone authorize` devolve tambem em base64
+# um JSON com client_id, client_secret e o token. Aceita esse formato ou o
+# token JSON puro ({"access_token":...}).
+DRIVE_CREDS=$(printf '%s' "$AUTH" | python3 -c '
+import base64, json, sys
+raw = sys.stdin.read().strip()
+d = json.loads(raw if raw.startswith("{") else base64.b64decode(raw))
+tok = d.get("token", d) if "access_token" not in d else d
+tok = tok if isinstance(tok, str) else json.dumps(tok)
+for k in ("client_id", "client_secret"):
+    if d.get(k):
+        print(f"{k} = {d[k]}")
+print(f"token = {tok}")
+')
 OBSCURED=$(printf '%s' "$PASS" | docker compose run --rm -T rclone obscure -)
 
 # Nomes de arquivo em claro (so o conteudo e criptografado): da para ver no
@@ -34,7 +49,7 @@ cat > rclone/rclone.conf <<CONF
 [gdrive]
 type = drive
 scope = drive.file
-token = $TOKEN
+$DRIVE_CREDS
 
 [pi-backup]
 type = crypt

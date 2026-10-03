@@ -36,26 +36,34 @@ de senhas.** É o único ponto deste setup que não se recupera de outro lugar.
 
 ## Instalação
 
-1. No **PC Windows**, gerar o token do Google Drive (abre o navegador para
-   autorizar):
+1. Criar um **client ID próprio** no Google Cloud. O client compartilhado do
+   rclone está sendo desativado em 2026 e o backup pararia de funcionar.
+   No [Google Cloud Console](https://console.cloud.google.com/):
+   - criar um projeto e ativar a **Google Drive API**;
+   - em *Google Auth Platform*, configurar a tela de consentimento como
+     **External**, adicionar o escopo `.../auth/drive.file` e **publicar o
+     app (In production)**. Em *Testing*, o token expira em 7 dias;
+   - em *Clients*, criar um client do tipo **Desktop app** e anotar ID e secret.
+2. No **PC Windows**, gerar o token (abre o navegador para autorizar):
    ```powershell
    winget install Rclone.Rclone
-   rclone authorize "drive" "eyJzY29wZSI6ImRyaXZlLmZpbGUifQ"
+   $opts = '{"client_id":"<ID>","client_secret":"<SECRET>","scope":"drive.file"}'
+   rclone authorize "drive" ([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($opts)))
    ```
-   O segundo argumento é `{"scope":"drive.file"}` em base64. Copiar a linha
-   `{...}` que ele imprime no final.
-2. No Healthchecks.io, criar um check *Backup semanal* com período de
+   Copiar o bloco que ele imprime entre `--->` e `<---End paste`. Ele já
+   carrega o client ID, o secret e o token.
+3. No Healthchecks.io, criar um check *Backup semanal* com período de
    **7 dias** e tolerância de **2 dias**, ligado ao Telegram.
-3. No Pi:
+4. No Pi:
    ```bash
    cd ~/docker/backup
    cp .env.example .env && chmod 600 .env   # colar a URL do check
    ```
-4. Do PC, rodar a configuração (interativa — pede o token e a senha):
+5. Do PC, rodar a configuração (interativa — pede o token e a senha):
    ```bash
    ssh -t admin@192.168.15.5 ~/docker/backup/configure.sh
    ```
-5. Testar um backup na hora:
+6. Testar um backup na hora:
    ```bash
    ~/docker/backup/backup.sh --force
    ```
