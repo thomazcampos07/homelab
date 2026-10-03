@@ -47,9 +47,10 @@ de senhas.** É o único ponto deste setup que não se recupera de outro lugar.
 2. No **PC Windows**, gerar o token (abre o navegador para autorizar):
    ```powershell
    winget install Rclone.Rclone
-   $opts = '{"client_id":"<ID>","client_secret":"<SECRET>","scope":"drive.file"}'
-   rclone authorize "drive" ([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($opts)))
+   powershell -ExecutionPolicy Bypass -File .\authorize.ps1
    ```
+   O `authorize.ps1` já tem o client ID do projeto `rclone-pi` e pede só o
+   secret, que não vai para o Git.
    Copiar o bloco que ele imprime entre `--->` e `<---End paste`. Ele já
    carrega o client ID, o secret e o token.
 3. No Healthchecks.io, criar um check *Backup semanal* com período de
