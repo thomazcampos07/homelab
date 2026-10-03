@@ -13,6 +13,8 @@ $ClientSecret = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
 
 $opts = @{ client_id = $ClientId; client_secret = $ClientSecret; scope = "drive.file" } |
   ConvertTo-Json -Compress
+# O rclone le base64 "URL-safe" sem padding: troca + e / por - e _, tira o =
 $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($opts))
+$b64 = $b64.TrimEnd('=').Replace('+', '-').Replace('/', '_')
 
 rclone authorize "drive" $b64

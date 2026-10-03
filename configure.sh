@@ -32,7 +32,7 @@ read -rsp "Repita a senha: " PASS2; echo
 DRIVE_CREDS=$(printf '%s' "$AUTH" | python3 -c '
 import base64, json, sys
 raw = sys.stdin.read().strip()
-d = json.loads(raw if raw.startswith("{") else base64.b64decode(raw))
+d = json.loads(raw if raw.startswith("{") else base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)))
 tok = d.get("token", d) if "access_token" not in d else d
 tok = tok if isinstance(tok, str) else json.dumps(tok)
 for k in ("client_id", "client_secret"):
