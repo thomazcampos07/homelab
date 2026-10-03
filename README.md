@@ -8,11 +8,24 @@ Pi-hole junto**. Os clientes recebem `192.168.15.5` como DNS e roteiam todo o
 tráfego pelo túnel, então o bloqueio de anúncios continua valendo no 4G ou em
 Wi-Fi público. O stack de DNS está em outro repositório (`pihole-docker`).
 
+## Variáveis do `.env`
+
+O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
+(`docker/wireguard/.env` dentro do `.tar.gz`, ver repositório `backup-docker`);
+sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
+
+| Variável | Conteúdo |
+|---|---|
+| `DUCKDNS_SUBDOMAIN` | Subdomínio no DuckDNS, sem `.duckdns.org` |
+| `DUCKDNS_TOKEN` | Token da conta DuckDNS |
+| `DDNS_DOMAIN` | Domínio completo (`<subdominio>.duckdns.org`), endpoint dos clientes |
+| `WG_PEERS` | Perfis separados por vírgula (hoje `celular,notebook`) |
+
+As chaves dos perfis ficam em `config/`, também fora do Git e também no backup.
+
 ## Subir
 
 ```bash
-cp .env.example .env     # preencha o token do DuckDNS
-chmod 600 .env
 docker compose up -d
 ```
 
