@@ -2,10 +2,10 @@
 # Rodar no PowerShell do Windows (precisa do rclone: winget install Rclone.Rclone).
 # Abre o navegador para autorizar; colar o bloco impresso no configure.sh do Pi.
 #
-# O client ID e do projeto "rclone-pi" no Google Cloud e nao e segredo (aparece
-# na URL de autorizacao). O secret fica fora do Git e e pedido na hora.
+# O client ID e o secret sao do projeto "rclone-pi" no Google Cloud. Ficam
+# fora do Git e sao pedidos na hora.
 
-$ClientId = "<CLIENT_ID>.apps.googleusercontent.com"
+$ClientId = Read-Host "Client ID (...apps.googleusercontent.com)"
 
 $secure = Read-Host "Client secret" -AsSecureString
 $ClientSecret = [Runtime.InteropServices.Marshal]::PtrToStringAuto(

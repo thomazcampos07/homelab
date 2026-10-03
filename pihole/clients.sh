@@ -5,21 +5,25 @@
 #
 # Cadastro por MAC, nao por IP: o roteador reatribui IPs e o MAC (com o
 # "Endereco Wi-Fi privado" do iPhone em Fixo) nao muda nesta rede.
+#
+# A lista fica em clients.list, ao lado do script e fora do Git (ver
+# clients.list.example): uma linha "MAC|nome" por aparelho.
 set -euo pipefail
 
-# MAC|nome  (IP reservado no roteador so como referencia)
-CLIENTS=(
-  "AA:BB:CC:DD:EE:01|iPhone do Thomaz"     # 192.168.15.21
-  "AA:BB:CC:DD:EE:02|Notebook do Thomaz"   # 192.168.15.20
-)
+LIST="$(dirname "$0")/clients.list"
+[[ -f "$LIST" ]] || { echo "Crie o $LIST a partir do clients.list.example." >&2; exit 1; }
 
 sql=""
-for entry in "${CLIENTS[@]}"; do
+while IFS= read -r entry; do
+  entry="${entry%%#*}"
+  entry="${entry#"${entry%%[![:space:]]*}"}"
+  entry="${entry%"${entry##*[![:space:]]}"}"
+  [[ -n "$entry" ]] || continue
   mac="${entry%%|*}"
   name="${entry#*|}"
   sql+="insert into client (ip, comment) values ('$mac', '$name')
         on conflict(ip) do update set comment = excluded.comment;"
-done
+done < "$LIST"
 
 docker exec pihole pihole-FTL sqlite3 /etc/pihole/gravity.db "$sql"
 docker exec pihole pihole reloadlists

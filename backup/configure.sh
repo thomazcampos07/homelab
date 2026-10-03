@@ -10,8 +10,8 @@ set -euo pipefail
 DIR=/home/admin/docker/backup
 FOLDER="Backups Raspberry Pi"
 # Client OAuth proprio (projeto "rclone-pi" no Google Cloud). O compartilhado do
-# rclone esta sendo desativado. O ID nao e segredo; o secret e pedido abaixo.
-CLIENT_ID="<CLIENT_ID>.apps.googleusercontent.com"
+# rclone esta sendo desativado. O ID e o secret ficam fora do Git e sao
+# pedidos abaixo.
 cd "$DIR"
 mkdir -p rclone staging out
 chmod 700 rclone
@@ -20,6 +20,9 @@ chmod 700 rclone
 
 echo "Cole o que o 'rclone authorize' imprimiu no PC (entre ---> e <---End paste):"
 read -r AUTH
+read -rp "Client ID do Google (...apps.googleusercontent.com): " CLIENT_ID
+[[ "$CLIENT_ID" == *.apps.googleusercontent.com ]] ||
+  { echo "Isso nao parece o client ID (...apps.googleusercontent.com)." >&2; exit 1; }
 read -rsp "Client secret do Google (comeca com GOCSPX-): " CLIENT_SECRET; echo
 # Colar o bloco do token aqui por engano (ficou na area de transferencia) da
 # invalid_client so na renovacao, uma hora depois. Melhor barrar na hora.
