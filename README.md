@@ -58,7 +58,7 @@ de senhas.** É o único ponto deste setup que não se recupera de outro lugar.
 4. No Pi:
    ```bash
    cd ~/docker/backup
-   cp .env.example .env && chmod 600 .env   # colar a URL do check
+   echo "HC_PING_URL=<url de ping do check>" > .env && chmod 600 .env
    ```
 5. Do PC, rodar a configuração (interativa — pede o token e a senha):
    ```bash

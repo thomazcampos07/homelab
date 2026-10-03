@@ -16,7 +16,7 @@ cd "$DIR"
 mkdir -p rclone staging out
 chmod 700 rclone
 
-[[ -f .env ]] || { echo "Crie o .env a partir do .env.example antes." >&2; exit 1; }
+[[ -f .env ]] || { echo "Crie o .env com HC_PING_URL=<url do Healthchecks> antes (ver README)." >&2; exit 1; }
 
 echo "Cole o que o 'rclone authorize' imprimiu no PC (entre ---> e <---End paste):"
 read -r AUTH
