@@ -38,7 +38,8 @@ trap cleanup EXIT
 trap 'fail $LINENO' ERR
 
 ping_hc /start
-rm -rf staging out && mkdir -p staging out
+# Criar antes do compose: pasta de bind mount inexistente o Docker cria como root
+rm -rf staging out && mkdir -p staging out rclone
 
 # Pi-hole: o Teleporter e a forma consistente de exportar config, listas e
 # clientes. Os bancos SQLite crus copiados com o FTL rodando podem sair corrompidos.
