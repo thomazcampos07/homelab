@@ -31,7 +31,10 @@ ping_hc() { [[ -n "$HC_PING_URL" ]] && curl -fsS -m 10 --retry 3 "$HC_PING_URL$1
 cleanup() {
   # O Beszel nunca pode ficar parado por causa de uma falha no meio do caminho
   docker start beszel >/dev/null 2>&1 || true
-  rm -rf staging out
+  # Esvazia em vez de apagar: se as pastas sumirem, o proximo `docker compose
+  # run` (ate um manual, de restauracao) as recria como root e o rclone, que
+  # roda como admin, nao consegue gravar nelas.
+  find staging out -mindepth 1 -delete 2>/dev/null || true
 }
 fail() { echo "backup falhou na linha $1" >&2; ping_hc /fail; }
 trap cleanup EXIT
