@@ -20,7 +20,11 @@ chmod 700 rclone
 
 echo "Cole o que o 'rclone authorize' imprimiu no PC (entre ---> e <---End paste):"
 read -r AUTH
-read -rsp "Client secret do Google (o mesmo usado no authorize.ps1): " CLIENT_SECRET; echo
+read -rsp "Client secret do Google (comeca com GOCSPX-): " CLIENT_SECRET; echo
+# Colar o bloco do token aqui por engano (ficou na area de transferencia) da
+# invalid_client so na renovacao, uma hora depois. Melhor barrar na hora.
+[[ "$CLIENT_SECRET" =~ ^GOCSPX-[A-Za-z0-9_-]{20,40}$ ]] ||
+  { echo "Isso nao parece o client secret (GOCSPX-..., ~35 caracteres)." >&2; exit 1; }
 read -rsp "Senha da criptografia (guarde no gerenciador de senhas): " PASS; echo
 read -rsp "Repita a senha: " PASS2; echo
 [[ "$PASS" == "$PASS2" ]] || { echo "As senhas nao conferem." >&2; exit 1; }
