@@ -11,15 +11,22 @@ O sistema fica num cartão SD.
 
 Este repositório guarda a **receita completa**: tanto o preparo do sistema
 operacional (`setup-host.sh`) quanto a definição do container
-(`docker-compose.yml`). Os backups do Pi-hole ficam em `backups/`, que não é
-versionado — o export Teleporter contém chave privada TLS e o hash da senha da
-API.
+(`docker-compose.yml`). O estado (senha, export Teleporter) não fica aqui:
+vai no backup semanal criptografado do repositório `backup-docker`.
+
+## Variáveis do `.env`
+
+O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
+(`docker/pihole/.env` dentro do `.tar.gz`, ver repositório `backup-docker`);
+sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
+
+| Variável | Conteúdo |
+|---|---|
+| `PIHOLE_PASSWORD` | Senha do painel web (guardada no Bitwarden) |
 
 ## Subir
 
 ```bash
-cp .env.example .env     # defina uma senha forte
-chmod 600 .env
 docker compose up -d
 ```
 
@@ -40,10 +47,9 @@ O painel fica em `http://192.168.15.5/admin`.
    docker run --rm -v "$PWD/unbound/keys:/keys"      --entrypoint unbound-anchor klutchell/unbound:v1.26.1 -a /keys/root.key
    ```
    Sai com código 1 quando cria a chave — é o comportamento normal.
-5. Criar o `.env` com a senha do painel e subir:
+5. Recolocar o `.env` (ver *Variáveis do `.env`*) e subir:
    ```bash
-   cd ~/docker/pihole && cp .env.example .env
-   docker compose up -d
+   cd ~/docker/pihole && docker compose up -d
    ```
 6. Recadastrar os clientes nomeados: `./clients.sh`
 7. Apontar o DNS dos clientes para o IP do Pi (ver *Quem usa o Pi-hole*)
@@ -122,8 +128,6 @@ docker compose pull && docker compose up -d   # atualizar (após trocar a tag)
 
 ## Backup
 
-```bash
-docker exec pihole pihole-FTL --teleporter
-```
-
-Gera um `.zip` dentro do container; copiar para `backups/` com `docker cp`.
+Automático, pelo repositório `backup-docker`: toda semana ele gera o
+Teleporter, junta com o `.env` e envia criptografado para o Google Drive. Para
+um export avulso: `docker exec pihole pihole-FTL --teleporter`.

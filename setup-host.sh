@@ -81,5 +81,5 @@ fi
 
 echo
 echo "Sistema pronto. Reinicie para ativar o log2ram e depois suba o Pi-hole:"
-echo "  cd ~/docker/pihole && cp .env.example .env   # defina a senha do painel"
+echo "  cd ~/docker/pihole   # recoloque o .env (do backup ou com PIHOLE_PASSWORD=...)"
 echo "  docker compose up -d"
