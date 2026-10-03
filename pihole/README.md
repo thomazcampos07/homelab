@@ -9,15 +9,15 @@ O caminho de uma consulta: cliente → Pi-hole (filtra) → Unbound (resolve a
 partir dos servidores raiz) → internet. Nenhum resolvedor de terceiros no meio.
 O sistema fica num cartão SD.
 
-Este repositório guarda a **receita completa**: tanto o preparo do sistema
+Esta pasta guarda a **receita completa**: tanto o preparo do sistema
 operacional (`setup-host.sh`) quanto a definição do container
 (`docker-compose.yml`). O estado (senha, export Teleporter) não fica aqui:
-vai no backup semanal criptografado do repositório `backup-docker`.
+vai no backup semanal criptografado da pasta `backup/`.
 
 ## Variáveis do `.env`
 
 O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
-(`docker/pihole/.env` dentro do `.tar.gz`, ver repositório `backup-docker`);
+(`docker/pihole/.env` dentro do `.tar.gz`, ver pasta `backup/`);
 sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
 
 | Variável | Conteúdo |
@@ -35,7 +35,7 @@ O painel fica em `http://192.168.15.5/admin`.
 ## Restaurar do zero num Pi novo
 
 1. Gravar o Raspberry Pi OS (64-bit) no cartão e criar o usuário `admin`
-2. Copiar este repositório para `~/docker/pihole` (via `git clone` ou `scp`)
+2. Copiar a pasta `pihole/` deste repositório para `~/docker/pihole` (ver *Restaurar o Pi do zero* no README da raiz)
 3. Preparar o sistema — instala Docker e log2ram:
    ```bash
    ./setup-host.sh
@@ -128,6 +128,6 @@ docker compose pull && docker compose up -d   # atualizar (após trocar a tag)
 
 ## Backup
 
-Automático, pelo repositório `backup-docker`: toda semana ele gera o
+Automático, pela pasta `backup/`: toda semana ele gera o
 Teleporter, junta com o `.env` e envia criptografado para o Google Drive. Para
 um export avulso: `docker exec pihole pihole-FTL --teleporter`.

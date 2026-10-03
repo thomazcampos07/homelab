@@ -12,7 +12,7 @@ pode monitorar outras máquinas depois — basta rodar mais agentes.
 ## Variáveis do `.env`
 
 O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
-(`docker/beszel/.env` dentro do `.tar.gz`, ver repositório `backup-docker`);
+(`docker/beszel/.env` dentro do `.tar.gz`, ver pasta `backup/`);
 sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
 
 | Variável | Conteúdo |
@@ -46,8 +46,8 @@ No painel, em **Add System**, use host `192.168.15.5` e porta `45876`.
 As métricas de memória por container **só funcionam** com o controlador de
 cgroup de memória habilitado no kernel. O Raspberry Pi OS não o habilita por
 padrão, e sem ele o Beszel registra `bad memory stats` para todos os
-containers. Isso é configurado pelo `setup-host.sh` do repositório
-`pihole-docker`, que adiciona `cgroup_enable=memory cgroup_memory=1` ao
+containers. Isso é configurado pelo `setup-host.sh` da pasta
+`pihole/`, que adiciona `cgroup_enable=memory cgroup_memory=1` ao
 `cmdline.txt`.
 
 ## Decisões de configuração

@@ -6,12 +6,12 @@ acompanhar o IP público dinâmico da operadora.
 O objetivo principal não é só acessar a rede de casa de fora: é **levar o
 Pi-hole junto**. Os clientes recebem `192.168.15.5` como DNS e roteiam todo o
 tráfego pelo túnel, então o bloqueio de anúncios continua valendo no 4G ou em
-Wi-Fi público. O stack de DNS está em outro repositório (`pihole-docker`).
+Wi-Fi público. O stack de DNS está na pasta `pihole/`.
 
 ## Variáveis do `.env`
 
 O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
-(`docker/wireguard/.env` dentro do `.tar.gz`, ver repositório `backup-docker`);
+(`docker/wireguard/.env` dentro do `.tar.gz`, ver pasta `backup/`);
 sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
 
 | Variável | Conteúdo |
@@ -42,7 +42,7 @@ Celular escaneia o QR; notebook importa o arquivo em `config/peer_<nome>/`.
 Incluir um novo nome em `WG_PEERS` exige recriar o container
 (`docker compose up -d --force-recreate`). Perfis já gerados são preservados.
 
-## Pré-requisitos fora deste repositório
+## Pré-requisitos fora do Git
 
 - **Redirecionamento de porta no roteador**: `UDP 51820` → `192.168.15.5`
 - **Subdomínio no DuckDNS** criado manualmente (a API só atualiza IP, não cria)

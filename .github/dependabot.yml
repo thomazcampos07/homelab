@@ -1,10 +1,14 @@
-# Avisa (via PR) quando sai versao nova das imagens pinadas no compose.
+# Avisa (via PR) quando sai versao nova das imagens pinadas nos composes.
 # Roda no GitHub, nao no Pi. Merge do PR nao faz deploy: depois de aceitar,
-# puxar no Pi e rodar `docker compose pull && docker compose up -d`.
+# levar o compose ao Pi e rodar `docker compose pull && docker compose up -d`.
 version: 2
 updates:
   - package-ecosystem: "docker-compose"
-    directory: "/"
+    directories:
+      - "/pihole"
+      - "/wireguard"
+      - "/beszel"
+      - "/backup"
     schedule:
       interval: "weekly"
       day: "saturday"
