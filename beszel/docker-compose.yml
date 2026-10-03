@@ -1,0 +1,27 @@
+services:
+  # Interface web e banco de historico. Porta 8090 porque 80 e 443 estao
+  # ocupadas pelo Pi-hole (que roda em network_mode host).
+  beszel:
+    container_name: beszel
+    image: henrygd/beszel:0.20.0
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./data:/beszel_data
+    restart: unless-stopped
+
+  # Coleta as metricas da maquina. Usa network_mode host para enxergar as
+  # interfaces reais do Pi — em bridge, so veria a rede virtual do Docker.
+  beszel-agent:
+    container_name: beszel-agent
+    image: henrygd/beszel-agent:0.20.0
+    network_mode: host
+    environment:
+      LISTEN: "45876"
+      # Chave publica do hub, obtida na interface ao adicionar o sistema.
+      KEY: ${BESZEL_KEY}
+    volumes:
+      # Somente leitura: o agente precisa apenas listar containers e ler status.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./agent_data:/var/lib/beszel-agent
+    restart: unless-stopped
