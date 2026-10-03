@@ -9,10 +9,20 @@ São dois componentes: o **hub** (interface web e banco de histórico) e o
 **agente** (coleta as métricas da máquina). Ambos rodam no mesmo Pi, mas o hub
 pode monitorar outras máquinas depois — basta rodar mais agentes.
 
+## Variáveis do `.env`
+
+O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
+(`docker/beszel/.env` dentro do `.tar.gz`, ver repositório `backup-docker`);
+sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
+
+| Variável | Conteúdo |
+|---|---|
+| `BESZEL_KEY` | Chave pública do hub (ver abaixo como obter) |
+| `HC_PING_URL` | URL de ping do check do Pi no Healthchecks.io |
+
 ## Subir
 
 ```bash
-cp .env.example .env
 docker compose up -d beszel          # sobe só o hub primeiro
 ```
 
