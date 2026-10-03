@@ -112,9 +112,14 @@ escapar do bloqueio). Fora de casa, os peers do WireGuard já entregam o Pi-hole
 como DNS.
 
 Os aparelhos têm IP reservado no roteador e são cadastrados no Pi-hole **por
-MAC** pelo `clients.sh`, que lê a lista do `clients.list` (fora do Git, com
-cópia no backup; modelo em `clients.list.example`). Para incluir um aparelho,
-acrescentar a linha `MAC|nome` e rodar o script de novo.
+MAC** pelo `clients.sh`, que lê a lista do `clients.list` (fora do Git, volta
+do backup). Uma linha por aparelho, `#` para comentário:
+
+```
+AA:BB:CC:DD:EE:01|Celular   # IP reservado no roteador, só como referência
+```
+
+Para incluir um aparelho, acrescentar a linha e rodar o script de novo.
 
 ## Comandos do dia a dia
 

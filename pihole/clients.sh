@@ -6,12 +6,12 @@
 # Cadastro por MAC, nao por IP: o roteador reatribui IPs e o MAC (com o
 # "Endereco Wi-Fi privado" do iPhone em Fixo) nao muda nesta rede.
 #
-# A lista fica em clients.list, ao lado do script e fora do Git (ver
-# clients.list.example): uma linha "MAC|nome" por aparelho.
+# A lista fica em clients.list, ao lado do script e fora do Git (volta do
+# backup): uma linha "MAC|nome" por aparelho, # para comentario.
 set -euo pipefail
 
 LIST="$(dirname "$0")/clients.list"
-[[ -f "$LIST" ]] || { echo "Crie o $LIST a partir do clients.list.example." >&2; exit 1; }
+[[ -f "$LIST" ]] || { echo "Falta o $LIST (volta do backup; formato no README)." >&2; exit 1; }
 
 sql=""
 while IFS= read -r entry; do
