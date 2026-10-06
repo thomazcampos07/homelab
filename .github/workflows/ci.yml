@@ -1,0 +1,80 @@
+# Validacao sem segredos: roda em todo PR (inclusive de fork e do
+# Dependabot), em push na main e como primeira etapa do deploy.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  compose:
+    name: docker compose config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Gera .env ficticios a partir do env-manifest
+        run: deploy/render-env.sh "$RUNNER_TEMP/env" --dummy
+      - name: Valida cada compose com as variaveis que o deploy vai fornecer
+        run: |
+          for compose in */docker-compose.yml; do
+            svc=${compose%%/*}
+            echo "::group::$svc"
+            env_file="$RUNNER_TEMP/env/$svc.env"
+            [[ -f "$env_file" ]] || env_file=/dev/null
+            # Variavel usada no compose e ausente do manifesto vira erro, e
+            # nao string vazia em silencio
+            out=$(docker compose -f "$compose" --env-file "$env_file" config -q 2>&1)
+            echo "$out"
+            if grep -q 'variable is not set' <<<"$out"; then
+              echo "::error file=$compose::variavel sem entrada no deploy/env-manifest"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: git ls-files '*.sh' | xargs shellcheck --severity=warning
+
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+
+  gitleaks:
+    name: segredos e dados pessoais
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Repo publico: varre o historico inteiro com as regras do .gitleaks.toml
+      # (MACs, dominio DuckDNS, client ID do Google, coautoria do Claude...)
+      - name: gitleaks
+        run: >-
+          docker run --rm -v "$PWD:/repo" -w /repo
+          ghcr.io/gitleaks/gitleaks:v8.30.1
+          git --config .gitleaks.toml --redact --no-banner --verbose .
+      # O gitleaks olha o conteudo dos arquivos, nao a mensagem do commit
+      - name: Sem coautoria de IA nas mensagens de commit
+        run: |
+          if git log --format=%B | grep -iE '^co-authored-by:.*(claude|anthropic)'; then
+            echo "::error::trailer de coautoria do Claude em mensagem de commit"
+            exit 1
+          fi

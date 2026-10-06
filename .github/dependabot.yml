@@ -1,6 +1,6 @@
-# Avisa (via PR) quando sai versao nova das imagens pinadas nos composes.
-# Roda no GitHub, nao no Pi. Merge do PR nao faz deploy: depois de aceitar,
-# levar o compose ao Pi e rodar `docker compose pull && docker compose up -d`.
+# Avisa (via PR) quando sai versao nova das imagens pinadas nos composes e das
+# actions usadas nos workflows. O merge do PR dispara o deploy no Pi
+# (.github/workflows/deploy.yml).
 version: 2
 updates:
   - package-ecosystem: "docker-compose"
@@ -15,3 +15,12 @@ updates:
       timezone: "America/Sao_Paulo"
     commit-message:
       prefix: "Atualiza imagem"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+      timezone: "America/Sao_Paulo"
+    commit-message:
+      prefix: "Atualiza action"

@@ -1,0 +1,153 @@
+# Deploy no Raspberry Pi a cada push na main.
+#
+# O Pi nao tem porta aberta para a internet alem do WireGuard, entao o runner
+# entra na rede de casa como um peer da VPN ("github"), restrito a
+# 192.168.15.5, e fala com o Pi por SSH com uma chave presa ao receiver
+# (deploy/receiver.sh). Os .env sao montados com os secrets do Environment
+# "production" e o Pi aplica so o que mudou (deploy/apply.sh).
+#
+# OS LOGS DESTE WORKFLOW SAO PUBLICOS. Nada de set -x, nada de cat em .env ou
+# na config da VPN.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pihole/**"
+      - "wireguard/**"
+      - "beszel/**"
+      - "backup/**"
+      - "deploy/**"
+      - ".github/workflows/deploy.yml"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "So mostrar o que mudaria (nomes de arquivo e de chave), sem aplicar"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Um deploy por vez, e nunca cancelar um que ja esta mexendo no Pi
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  PI: admin@192.168.15.5
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    # Fork nunca tem os secrets, mas tambem nao precisa nem tentar
+    if: github.repository == 'thomazcampos07/homelab'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Monta o pacote (.env com os secrets + arquivos versionados)
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: |
+          bundle="$RUNNER_TEMP/bundle"
+          mkdir -p "$bundle/repo"
+          deploy/render-env.sh "$bundle/env"
+          git archive HEAD pihole wireguard beszel backup deploy | tar -x -C "$bundle/repo"
+          git rev-parse HEAD > "$bundle/sha"
+          tar -C "$bundle" -czf "$RUNNER_TEMP/bundle.tar.gz" .
+          rm -rf "$bundle"
+
+      - name: Sobe o tunel WireGuard ate a rede de casa
+        env:
+          WG_CLIENT_CONF: ${{ secrets.WG_CLIENT_CONF }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq wireguard-tools >/dev/null
+          (umask 077; printf '%s\n' "$WG_CLIENT_CONF" | sudo tee /etc/wireguard/wg0.conf >/dev/null)
+          sudo wg-quick up wg0 2>/dev/null
+          for _ in $(seq 30); do
+            nc -z -w 3 192.168.15.5 22 && { echo "Pi alcancado"; exit 0; }
+            sleep 2
+          done
+          echo "::error::Pi inalcancavel pelo tunel (Pi desligado? porta 51820 no roteador? DuckDNS?)"
+          exit 1
+
+      - name: Configura o SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          PI_SSH_HOST_KEY: ${{ secrets.PI_SSH_HOST_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          (umask 077; printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key)
+          printf '%s\n' "$PI_SSH_HOST_KEY" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'CONF'
+          Host 192.168.15.5
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 10
+            ServerAliveCountMax 3
+            ConnectTimeout 10
+          CONF
+
+      - name: Aplica no Pi
+        env:
+          # Variavel DEPLOY_DRY_RUN=true no repo deixa todo deploy em dry-run
+          # (usado no primeiro deploy, para conferir antes de aplicar)
+          DRY_RUN: ${{ (inputs.dry_run || vars.DEPLOY_DRY_RUN == 'true') && 'dry-run' || '' }}
+          RUN: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          rc=0
+          # RUN e DRY_RUN expandem aqui no runner; DRY_RUN vazio some de proposito
+          # shellcheck disable=SC2086,SC2029
+          ssh "$PI" receive "$RUN" $DRY_RUN < "$RUNNER_TEMP/bundle.tar.gz" || rc=$?
+
+          # 255 = a sessao SSH caiu. Esperado quando o deploy recria o
+          # WireGuard: o apply segue no Pi e o tunel volta sozinho.
+          if [[ $rc -eq 255 ]]; then
+            echo "::notice::conexao caiu no meio do deploy; esperando o Pi terminar"
+            status=running
+            for _ in $(seq 40); do
+              sleep 5
+              # shellcheck disable=SC2029
+              status=$(ssh "$PI" status "$RUN" 2>/dev/null) || continue
+              [[ "$status" != running ]] && break
+            done
+            echo "::group::log completo do Pi"
+            # shellcheck disable=SC2029
+            ssh "$PI" log "$RUN" || true
+            echo "::endgroup::"
+            [[ "$status" =~ ^[0-9]+$ ]] && rc=$status || rc=1
+          fi
+          exit "$rc"
+
+      - name: Fecha o tunel
+        if: always()
+        run: sudo wg-quick down wg0 2>/dev/null || true
+
+      - name: Avisa no Telegram
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RESULT: ${{ job.status }}
+          URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MSG: ${{ github.event.head_commit.message || 'workflow manual' }}
+        run: |
+          [[ -n "$TELEGRAM_BOT_TOKEN" && -n "$TELEGRAM_CHAT_ID" ]] || { echo "Telegram nao configurado, pulando"; exit 0; }
+          case "$RESULT" in success) icon="✅" ;; cancelled) icon="⚪" ;; *) icon="❌" ;; esac
+          text="$icon Deploy homelab: $RESULT
+          ${MSG%%$'\n'*}
+          $URL"
+          curl -fsS -m 10 -o /dev/null "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${text}" || echo "::warning::falha ao avisar no Telegram"

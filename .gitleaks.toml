@@ -1,0 +1,38 @@
+# Repo publico: alem das regras padrao do gitleaks (tokens, chaves privadas,
+# Telegram...), barra os dados pessoais que ja tiveram de ser tirados do
+# historico uma vez. As regras casam com o FORMATO do dado real, nunca com o
+# valor: escrever o valor aqui seria publica-lo.
+title = "homelab"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "endereco-mac"
+description = "MAC de aparelho da casa (a lista real fica no secret PIHOLE_CLIENTS_LIST)"
+regex = '''(?i)\b(?:[0-9a-f]{2}:){5}[0-9a-f]{2}\b'''
+[[rules.allowlists]]
+# Marcador usado nos exemplos de documentacao
+regexes = ['''(?i)aa:bb:cc:dd:ee:[0-9a-f]{2}''']
+
+[[rules]]
+id = "dominio-duckdns"
+description = "Subdominio DuckDNS real (fica nos secrets DUCKDNS_SUBDOMAIN e DDNS_DOMAIN)"
+regex = '''(?i)\b[a-z0-9][a-z0-9-]*\.duckdns\.org\b'''
+[[rules.allowlists]]
+regexes = ['''(?i)seu-subdominio\.duckdns\.org''']
+
+[[rules]]
+id = "google-oauth-client-id"
+description = "Client ID do Google do rclone (pedido pelos scripts na hora)"
+regex = '''\b\d{6,}-[a-z0-9]{20,}\.apps\.googleusercontent\.com\b'''
+
+[[rules]]
+id = "google-oauth-client-secret"
+description = "Client secret do Google do rclone"
+regex = '''GOCSPX-[A-Za-z0-9_-]{20,}'''
+
+[[rules]]
+id = "healthchecks-ping-url"
+description = "URL de ping do Healthchecks.io (quem tiver, silencia ou dispara o alerta)"
+regex = '''(?i)hc-ping\.com/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'''
