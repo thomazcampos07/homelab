@@ -59,6 +59,7 @@ file="pi-backup-$(date +%F).tar.gz"
 docker compose run --rm -T --user 0:0 --entrypoint tar rclone \
   -czf "/out/$file" -C /backup \
   --exclude=docker/backup \
+  --exclude=docker/.deploy \
   --exclude=docker/pihole/etc-pihole \
   --exclude=docker/pihole/unbound/keys \
   docker extra

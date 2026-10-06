@@ -10,16 +10,17 @@ Wi-Fi público. O stack de DNS está na pasta `pihole/`.
 
 ## Variáveis do `.env`
 
-O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
-(`docker/wireguard/.env` dentro do `.tar.gz`, ver pasta `backup/`);
-sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
+O `.env` não é versionado. Quem o escreve é o deploy, a partir dos secrets do
+Environment `production` no GitHub (mapa em `deploy/env-manifest`, ver pasta
+`deploy/`). Para trocar um valor, editar o secret e rodar o workflow Deploy.
+Ele também vai no backup semanal (`docker/wireguard/.env` dentro do `.tar.gz`).
 
 | Variável | Conteúdo |
 |---|---|
 | `DUCKDNS_SUBDOMAIN` | Subdomínio no DuckDNS, sem `.duckdns.org` |
 | `DUCKDNS_TOKEN` | Token da conta DuckDNS |
 | `DDNS_DOMAIN` | Domínio completo (`<subdominio>.duckdns.org`), endpoint dos clientes |
-| `WG_PEERS` | Perfis separados por vírgula (hoje `celular,notebook`) |
+| `WG_PEERS` | Perfis separados por vírgula (hoje `celular,notebook,github`; o `github` é o runner do deploy) |
 
 As chaves dos perfis ficam em `config/`, também fora do Git e também no backup.
 
@@ -31,7 +32,8 @@ docker compose up -d
 
 ## Adicionar um dispositivo
 
-Os perfis são definidos em `WG_PEERS` no `.env`. Para pegar a configuração:
+Os perfis são definidos no secret `WG_PEERS`: acrescentar o nome lá e rodar
+o workflow Deploy. Para pegar a configuração:
 
 ```bash
 docker exec wireguard /app/show-peer celular     # QR code no terminal
@@ -39,8 +41,9 @@ docker exec wireguard /app/show-peer celular     # QR code no terminal
 
 Celular escaneia o QR; notebook importa o arquivo em `config/peer_<nome>/`.
 
-Incluir um novo nome em `WG_PEERS` exige recriar o container
-(`docker compose up -d --force-recreate`). Perfis já gerados são preservados.
+O deploy recria o container quando `WG_PEERS` muda. Perfis já gerados são
+preservados. Não tirar o `github` da lista: sem ele a esteira perde o caminho
+até o Pi.
 
 ## Pré-requisitos fora do Git
 

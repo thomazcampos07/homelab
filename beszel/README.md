@@ -11,9 +11,10 @@ pode monitorar outras máquinas depois — basta rodar mais agentes.
 
 ## Variáveis do `.env`
 
-O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
-(`docker/beszel/.env` dentro do `.tar.gz`, ver pasta `backup/`);
-sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
+O `.env` não é versionado. Quem o escreve é o deploy, a partir dos secrets do
+Environment `production` no GitHub (mapa em `deploy/env-manifest`, ver pasta
+`deploy/`). Para trocar um valor, editar o secret e rodar o workflow Deploy.
+Ele também vai no backup semanal (`docker/beszel/.env` dentro do `.tar.gz`).
 
 | Variável | Conteúdo |
 |---|---|

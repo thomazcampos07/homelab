@@ -16,9 +16,10 @@ vai no backup semanal criptografado da pasta `backup/`.
 
 ## Variáveis do `.env`
 
-O `.env` não é versionado. Num Pi reinstalado, ele volta do backup semanal
-(`docker/pihole/.env` dentro do `.tar.gz`, ver pasta `backup/`);
-sem backup, criar à mão com as variáveis abaixo e `chmod 600 .env`.
+O `.env` não é versionado. Quem o escreve é o deploy, a partir dos secrets do
+Environment `production` no GitHub (mapa em `deploy/env-manifest`, ver pasta
+`deploy/`). Para trocar um valor, editar o secret e rodar o workflow Deploy.
+Ele também vai no backup semanal (`docker/pihole/.env` dentro do `.tar.gz`).
 
 | Variável | Conteúdo |
 |---|---|
@@ -112,8 +113,9 @@ escapar do bloqueio). Fora de casa, os peers do WireGuard já entregam o Pi-hole
 como DNS.
 
 Os aparelhos têm IP reservado no roteador e são cadastrados no Pi-hole **por
-MAC** pelo `clients.sh`, que lê a lista do `clients.list` (fora do Git, volta
-do backup). Uma linha por aparelho, `#` para comentário:
+MAC** pelo `clients.sh`, que lê a lista do `clients.list` (fora do Git). A fonte
+da verdade é o secret `PIHOLE_CLIENTS_LIST`: quando ele muda, o deploy
+reescreve o arquivo e roda o `clients.sh`. Uma linha por aparelho, `#` para comentário:
 
 ```
 AA:BB:CC:DD:EE:01|Celular   # IP reservado no roteador, só como referência

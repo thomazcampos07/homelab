@@ -23,6 +23,7 @@ flowchart LR
   beszel -->|alerts| telegram[Telegram]
   ping -->|heartbeat every 5 min| hc[Healthchecks.io] -->|silence = alert| telegram
   backup -->|weekly, encrypted| drive[Google Drive]
+  gha[GitHub Actions] -->|deploy over WireGuard + SSH| wg
 ```
 
 ## Services
@@ -33,6 +34,7 @@ flowchart LR
 | [`wireguard/`](wireguard/) | VPN with DuckDNS for the dynamic public IP. Routes all client traffic through the tunnel so ad blocking follows the devices outside home. |
 | [`beszel/`](beszel/) | Monitoring (CPU, memory, disk, temperature, containers) with Telegram alerts, plus a dead man's switch for when the Pi itself is down. |
 | [`backup/`](backup/) | Weekly encrypted backup to Google Drive of all state that Git does not hold. |
+| [`deploy/`](deploy/) | CI/CD: every merge to `main` is validated and deployed to the Pi, with `.env` files built from GitHub secrets, health checks and automatic rollback. |
 
 Each folder mirrors a folder in `~/docker/` on the Pi and has its own README
 (in Portuguese) with the full setup, variables and design decisions.
@@ -41,7 +43,19 @@ Each folder mirrors a folder in `~/docker/` on the Pi and has its own README
 
 - **Pinned image tags, never `:latest`.** Upgrading is changing a tag; rollback
   is changing it back. Dependabot opens a PR every Saturday when a new tag
-  ships.
+  ships, and merging it deploys it.
+- **Push deploys over the existing VPN, nothing new exposed.** The Pi has no
+  open port besides WireGuard, so the GitHub runner joins it as one more peer,
+  routed to the Pi's SSH only. Its deploy key is pinned to a fixed receiver
+  script with a forced command, so it cannot open a shell. A self-hosted
+  runner was ruled out: on a public repo, a fork's pull request could run code
+  on the Pi, and the Pi has no RAM to spare.
+- **Deploys that undo themselves.** Each service is snapshotted, updated and
+  health-checked (a real DNS query for Pi-hole, the API for Beszel). A failed
+  check restores the snapshot. Unchanged services are never restarted.
+- **Public repo, public logs.** CI scans the full history with gitleaks plus
+  custom rules for this repo's personal data (MAC addresses, the DuckDNS
+  domain, OAuth client IDs). Deploy logs print key names, never values.
 - **No third-party resolver.** Unbound resolves from the root servers, so no
   DNS provider sees the household's browsing history, and it is bound to
   `127.0.0.1` only, so it cannot be abused for amplification attacks.
@@ -59,7 +73,8 @@ Each folder mirrors a folder in `~/docker/` on the Pi and has its own README
 - **Built for an SD card and 1 GB of RAM.** log2ram keeps `/var/log` in memory,
   Pi-hole keeps 30 days of queries instead of 91, and the journal size is capped.
 - **Least privilege.** The monitoring agent gets the Docker socket read-only;
-  secrets live in git-ignored `.env` files and in the backup, never in Git.
+  secrets live in GitHub environment secrets, which fork pull requests cannot
+  read, and reach the Pi only as git-ignored `.env` files, never in Git.
 - **Host networking only where it is needed.** Pi-hole needs it to see each
   client's real IP; the Beszel hub stays on a bridge network.
 
@@ -70,9 +85,13 @@ memory stats work at all.
 
 ## Operating it
 
-The Pi has no clone of this repo; files are copied over SSH. Send the
-**committed** version (LF), not the Windows working tree, which may be CRLF.
-From Git Bash:
+Merge to `main` and the change is on the Pi a few minutes later. To change a
+password, edit the secret and run the Deploy workflow by hand. Details, the
+secret list and the one-time setup are in [`deploy/`](deploy/).
+
+Manual fallback, when the pipeline is down: the Pi has no clone of this repo,
+so files are copied over SSH. Send the **committed** version (LF), not the
+Windows working tree, which may be CRLF. From Git Bash:
 
 ```bash
 git show HEAD:pihole/docker-compose.yml | ssh admin@192.168.15.5 'cat > ~/docker/pihole/docker-compose.yml'
@@ -80,8 +99,7 @@ ssh admin@192.168.15.5 'cd ~/docker/pihole && docker compose up -d'
 ```
 
 To check that the Pi matches Git, compare the `sha256sum` of `git show` with
-that of the file on the Pi. Merging a Dependabot PR does **not** deploy: copy
-the compose file over and run `docker compose pull && docker compose up -d`.
+that of the file on the Pi.
 
 ### Restore from scratch
 
@@ -94,7 +112,10 @@ the compose file over and run `docker compose pull && docker compose up -d`.
 4. Pull the state back from Google Drive (`.env` files, keys, data, crontab):
    see [`backup/`](backup/).
 5. Start each service following its README, beginning with
-   [`pihole/`](pihole/), which has the DNSSEC trust anchor step.
+   [`pihole/`](pihole/), which has the DNSSEC trust anchor step. WireGuard must
+   be up before the pipeline can reach the Pi.
+6. Reconnect the pipeline: `./deploy/bootstrap.sh` from the PC, then run the
+   Deploy workflow.
 
 ## History
 
