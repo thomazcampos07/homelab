@@ -20,7 +20,9 @@ flowchart LR
    das pastas + `.env` gerados pelo [`render-env.sh`](render-env.sh) a partir do
    [`env-manifest`](env-manifest).
 3. O runner entra na rede de casa como o peer `github` do WireGuard. A config
-   dele só roteia `192.168.15.5`.
+   dele só roteia `192.168.15.5`, e o firewall do container do WireGuard só o
+   deixa chegar à porta 22 (ver README do `wireguard/`). Cada deploy confere
+   que nenhuma outra porta responde pelo túnel.
 4. Pelo SSH, a chave de deploy só consegue chamar o
    [`receiver.sh`](receiver.sh) (`command=` forçado no `authorized_keys`).
    Ele recebe o pacote e roda o [`apply.sh`](apply.sh) que veio dentro.

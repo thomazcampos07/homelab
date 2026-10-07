@@ -39,6 +39,9 @@ services:
     volumes:
       - ./config:/config
       - /lib/modules:/lib/modules:ro
+      # Regras de firewall aplicadas a cada inicializacao (peer do deploy so
+      # alcanca o SSH do Pi)
+      - ./custom-init:/custom-cont-init.d:ro
     ports:
       - "51820:51820/udp"
     sysctls:
