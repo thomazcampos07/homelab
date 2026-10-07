@@ -14,7 +14,7 @@ services:
   # interfaces reais do Pi — em bridge, so veria a rede virtual do Docker.
   beszel-agent:
     container_name: beszel-agent
-    image: henrygd/beszel-agent:0.20.0
+    image: henrygd/beszel-agent:0.21.0
     network_mode: host
     environment:
       LISTEN: "45876"
