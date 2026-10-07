@@ -21,6 +21,7 @@ Ele também vai no backup semanal (`docker/wireguard/.env` dentro do `.tar.gz`).
 | `DUCKDNS_TOKEN` | Token da conta DuckDNS |
 | `DDNS_DOMAIN` | Domínio completo (`<subdominio>.duckdns.org`), endpoint dos clientes |
 | `WG_PEERS` | Perfis separados por vírgula (hoje `celular,notebook,github`; o `github` é o runner do deploy) |
+| `DDNS_HC_PING_URL` | URL de ping do check `raspberry-pi-duckdns` no Healthchecks.io |
 
 As chaves dos perfis ficam em `config/`, também fora do Git e também no backup.
 
@@ -44,6 +45,26 @@ Celular escaneia o QR; notebook importa o arquivo em `config/peer_<nome>/`.
 O deploy recria o container quando `WG_PEERS` muda. Perfis já gerados são
 preservados. Não tirar o `github` da lista: sem ele a esteira perde o caminho
 até o Pi.
+
+## Alerta de DDNS desatualizado
+
+O `ddns-check.sh` confere a cada 5 minutos se o domínio aponta para o IP
+público atual e, se apontar, pinga o check `raspberry-pi-duckdns` no
+Healthchecks.io (período 5 min, tolerância 30 min). Se o DuckDNS parar de
+atualizar, o ping para e o Healthchecks avisa no Telegram.
+
+Divergência não dispara alerta na hora: depois de uma troca de IP da operadora
+o DuckDNS leva alguns minutos para se ajustar, e a tolerância do check absorve
+isso. Motivo da existência: em 2026 o container `duckdns` ficou 12 dias de pé
+sem atualizar o IP, e nada percebeu.
+
+O deploy entrega o script e a variável; o agendamento fica no cron do `admin`:
+
+```bash
+*/5 * * * * /home/admin/docker/wireguard/ddns-check.sh 2>&1 | systemd-cat -t ddns-check
+```
+
+Log: `journalctl -t ddns-check`.
 
 ## Pré-requisitos fora do Git
 

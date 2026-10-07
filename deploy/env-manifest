@@ -10,6 +10,7 @@ wireguard   DUCKDNS_SUBDOMAIN   DUCKDNS_SUBDOMAIN
 wireguard   DUCKDNS_TOKEN       DUCKDNS_TOKEN
 wireguard   DDNS_DOMAIN         DDNS_DOMAIN
 wireguard   WG_PEERS            WG_PEERS
+wireguard   DDNS_HC_PING_URL    DDNS_HC_PING_URL
 beszel      BESZEL_KEY          BESZEL_KEY
 beszel      HC_PING_URL         BESZEL_HC_PING_URL
 backup      HC_PING_URL         BACKUP_HC_PING_URL
