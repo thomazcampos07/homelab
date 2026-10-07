@@ -21,6 +21,19 @@ jobs:
           persist-credentials: false
       - name: Gera .env ficticios a partir do env-manifest
         run: deploy/render-env.sh "$RUNNER_TEMP/env" --dummy
+      - name: deploy.yml passa todos os secrets do env-manifest
+        run: |
+          # Montado em partes para o GitHub nao ler como expressao
+          open='$'; open+='{{'
+          missing=0
+          while read -r svc _ name; do
+            [[ -z "$svc" || "$svc" == \#* ]] && continue
+            if ! grep -qF "$name: $open secrets.$name }}" .github/workflows/deploy.yml; then
+              echo "::error file=.github/workflows/deploy.yml::secret $name do env-manifest nao e passado no passo que monta o pacote"
+              missing=1
+            fi
+          done < deploy/env-manifest
+          exit "$missing"
       - name: Valida cada compose com as variaveis que o deploy vai fornecer
         run: |
           for compose in */docker-compose.yml; do

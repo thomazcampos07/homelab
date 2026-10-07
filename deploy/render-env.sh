@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Monta os .env de cada servico a partir do env-manifest.
 #
-#   render-env.sh <pasta-de-saida>            valores reais, lidos de SECRETS_JSON
+#   render-env.sh <pasta-de-saida>            valores reais, lidos do ambiente
 #   render-env.sh <pasta-de-saida> --dummy    valores ficticios, para o CI
 #
-# SECRETS_JSON e o `toJSON(secrets)` do GitHub Actions. Nada aqui imprime
-# valor: os logs do Actions sao publicos.
+# Cada secret chega como variavel de ambiente com o proprio nome, passada uma
+# a uma no deploy.yml (o CI confere que a lista bate com o env-manifest).
+# Nada aqui imprime valor: os logs do Actions sao publicos.
 #
 # Saida: <pasta>/<servico>.env no formato CHAVE=valor, sem aspas, porque o
 # healthcheck-ping.sh e o backup.sh leem com grep | cut e o BESZEL_KEY tem
@@ -19,13 +20,7 @@ MANIFEST="$(dirname "$0")/env-manifest"
 mkdir -p "$OUT"
 umask 077
 
-secret() {
-  jq -r --arg n "$1" '.[$n] // empty' <<<"$SECRETS_JSON"
-}
-
-if [[ "$DUMMY" != "--dummy" ]]; then
-  : "${SECRETS_JSON:?SECRETS_JSON nao definido}"
-fi
+secret() { printf '%s' "${!1:-}"; }
 
 missing=()
 while read -r svc key name; do

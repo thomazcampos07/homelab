@@ -56,8 +56,17 @@ jobs:
           persist-credentials: false
 
       - name: Monta o pacote (.env com os secrets + arquivos versionados)
+        # Lista conferida pelo CI contra o deploy/env-manifest
         env:
-          SECRETS_JSON: ${{ toJSON(secrets) }}
+          PIHOLE_PASSWORD: ${{ secrets.PIHOLE_PASSWORD }}
+          DUCKDNS_SUBDOMAIN: ${{ secrets.DUCKDNS_SUBDOMAIN }}
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+          DDNS_DOMAIN: ${{ secrets.DDNS_DOMAIN }}
+          WG_PEERS: ${{ secrets.WG_PEERS }}
+          BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
+          BESZEL_HC_PING_URL: ${{ secrets.BESZEL_HC_PING_URL }}
+          BACKUP_HC_PING_URL: ${{ secrets.BACKUP_HC_PING_URL }}
+          PIHOLE_CLIENTS_LIST: ${{ secrets.PIHOLE_CLIENTS_LIST }}
         run: |
           bundle="$RUNNER_TEMP/bundle"
           mkdir -p "$bundle/repo"
