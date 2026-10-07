@@ -91,3 +91,15 @@ Log: `journalctl -t ddns-check`.
 
 O `.env` (token do DuckDNS) e todo o diretório `config/` ficam **fora do Git** —
 esse diretório guarda as chaves privadas do servidor e de cada dispositivo.
+
+O peer `github` (runner do deploy) só alcança o SSH do Pi: o
+`custom-init/10-restringe-peer-github.sh` roda dentro do container a cada
+inicialização e põe na chain `FORWARD` um `ACCEPT` para `192.168.15.5:22` e um
+`DROP` para o resto, antes do `ACCEPT` genérico do `wg-quick`. Fica fora do
+template do `wg0.conf` porque a imagem só regenera esse arquivo quando
+`PEERS`, `SERVERURL` etc. mudam. O deploy confere a cada run que o túnel não
+alcança outra porta. Para ver as regras:
+
+```bash
+docker exec wireguard iptables -S FORWARD
+```

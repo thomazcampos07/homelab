@@ -140,6 +140,18 @@ jobs:
           fi
           exit "$rc"
 
+      # O peer "github" so pode alcancar o SSH do Pi (wireguard/custom-init).
+      # Se outra porta responder pelo tunel, a restricao sumiu.
+      - name: Confere que o tunel so alcanca o SSH
+        run: |
+          for port in 80 8090; do
+            if nc -z -w 5 192.168.15.5 "$port"; then
+              echo "::error::porta $port do Pi alcancavel pelo tunel; a restricao do peer github nao esta ativa"
+              exit 1
+            fi
+          done
+          echo "ok: so a porta 22 responde pelo tunel"
+
       - name: Fecha o tunel
         if: always()
         run: sudo wg-quick down wg0 2>/dev/null || true

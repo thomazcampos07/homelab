@@ -81,6 +81,8 @@ for svc in "${SERVICES[@]}"; do
     # Compose nao percebe mudanca em arquivo montado (ex.: unbound.conf).
     # Docs, scripts e o proprio compose nao exigem recriar o container.
     case "$f" in
+      # Scripts de inicializacao do container so valem num container novo
+      custom-init/*) recreate=1 ;;
       docker-compose.yml|*.md|.gitignore|*.sh|*.ps1) ;;
       *) recreate=1 ;;
     esac

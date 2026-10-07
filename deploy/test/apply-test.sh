@@ -130,6 +130,20 @@ check "conf volta a 644" "[[ \$(stat -c %a $D/pihole/unbound/unbound.conf) == 64
 check "script volta a 755" "[[ \$(stat -c %a $D/beszel/healthcheck-ping.sh) == 755 ]]"
 check "sem force-recreate" "! grep -q force-recreate /tmp/docker.log"
 
+echo "== 6c. script de custom-init recria o container"
+mkbundle /tmp/b6c
+cp /tmp/b6/repo/pihole/unbound/unbound.conf /tmp/b6c/repo/pihole/unbound/unbound.conf
+rm /tmp/b6c/repo/pihole/setup-host.sh
+cp /tmp/b2/env/pihole.env /tmp/b6c/env/pihole.env
+cp /tmp/b6/env/clients.list /tmp/b6c/env/clients.list
+echo "# mudou" >>/tmp/b6c/repo/wireguard/custom-init/10-restringe-peer-github.sh
+: >/tmp/docker.log
+out=$(send /tmp/b6c receive 6-3); rc=$?
+echo "$out" | sed 's/^/    /'
+check "rc 0" "[[ $rc == 0 ]]"
+check "wireguard recriado" "grep -q 'wireguard up -d --remove-orphans --force-recreate' /tmp/docker.log"
+check "custom-init 755" "[[ \$(stat -c %a $D/wireguard/custom-init/10-restringe-peer-github.sh) == 755 ]]"
+
 echo "== 7. entradas invalidas"
 check "run id invalido" "! SSH_ORIGINAL_COMMAND='status ../x' homelab-deploy 2>/dev/null"
 check "verbo invalido" "! SSH_ORIGINAL_COMMAND='bash 1-1' homelab-deploy 2>/dev/null"
