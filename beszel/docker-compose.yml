@@ -3,7 +3,7 @@ services:
   # ocupadas pelo Pi-hole (que roda em network_mode host).
   beszel:
     container_name: beszel
-    image: henrygd/beszel:0.20.0
+    image: henrygd/beszel:0.21.0
     ports:
       - "8090:8090"
     volumes:
