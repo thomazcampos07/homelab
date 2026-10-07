@@ -18,10 +18,12 @@ flowchart LR
     beszel[Beszel hub + agent]
     backup[rclone crypt]
     ping[healthcheck-ping.sh]
+    ddns
   end
   unbound -->|root servers| internet((Internet))
   beszel -->|alerts| telegram[Telegram]
   ping -->|heartbeat every 5 min| hc[Healthchecks.io] -->|silence = alert| telegram
+  ddns[ddns-check.sh] -->|only if DuckDNS points home| hc
   backup -->|weekly, encrypted| drive[Google Drive]
   gha[GitHub Actions] -->|deploy over WireGuard + SSH| wg
 ```
@@ -64,6 +66,9 @@ Each folder mirrors a folder in `~/docker/` on the Pi and has its own README
   Healthchecks.io every 5 minutes, and *silence* raises the alert. The
   heartbeat checks DNS first, because a Pi that is on with broken DNS is as bad
   as a Pi that is off.
+  A second heartbeat only fires while the DuckDNS name still points at the
+  home IP. The updater once sat for 12 days without updating, with no error,
+  silently cutting off the VPN and the deploy pipeline.
 - **Encrypted before it leaves the Pi.** Backups go through an rclone `crypt`
   remote, with `drive.file` scope (rclone only sees files it created) and
   8-week retention. The job runs daily but backs up only when the last success

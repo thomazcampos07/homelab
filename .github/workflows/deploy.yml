@@ -63,6 +63,7 @@ jobs:
           DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
           DDNS_DOMAIN: ${{ secrets.DDNS_DOMAIN }}
           WG_PEERS: ${{ secrets.WG_PEERS }}
+          DDNS_HC_PING_URL: ${{ secrets.DDNS_HC_PING_URL }}
           BESZEL_KEY: ${{ secrets.BESZEL_KEY }}
           BESZEL_HC_PING_URL: ${{ secrets.BESZEL_HC_PING_URL }}
           BACKUP_HC_PING_URL: ${{ secrets.BACKUP_HC_PING_URL }}

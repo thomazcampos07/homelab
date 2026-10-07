@@ -67,7 +67,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: docker run --rm -v "$PWD:/src:ro" debian:trixie-slim bash /src/deploy/test/apply-test.sh
+      - name: receiver e apply
+        run: docker run --rm -v "$PWD:/src:ro" debian:trixie-slim bash /src/deploy/test/apply-test.sh
+      - name: ddns-check
+        run: docker run --rm -v "$PWD:/src:ro" debian:trixie-slim bash /src/deploy/test/ddns-check-test.sh
 
   actionlint:
     runs-on: ubuntu-latest
