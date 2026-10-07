@@ -36,6 +36,12 @@ flock -w 600 9 || { log "outro deploy segurando o lock ha 10 min"; exit 1; }
 
 log "commit $(cat "$B/sha" 2>/dev/null || echo '?')${MODE:+ ($MODE)}"
 
+# O receiver extrai o pacote com umask 077 (por causa dos .env), o que deixa
+# os arquivos do repo 600/700. Volta ao modo do Git: 644, ou 755 se executavel.
+find "$B/repo" -type d -exec chmod 755 {} +
+find "$B/repo" -type f -perm -u+x -exec chmod 755 {} +
+find "$B/repo" -type f ! -perm -u+x -exec chmod 644 {} +
+
 # ---------- descobrir o que mudou ----------------------------------------
 
 # Arquivos versionados do servico no pacote, caminhos relativos
@@ -43,11 +49,8 @@ bundle_files() { (cd "$B/repo/$1" && find . -type f -printf '%P\n' | sort); }
 # O que o deploy anterior instalou (para apagar o que saiu do repo)
 previous_files() { awk -F'\t' -v s="$1" '$1 == s { print $2 }' "$MANIFEST" | sort; }
 
-# Mesmo conteudo e mesmo bit de execucao
-same_file() {
-  [[ -f "$2" ]] && cmp -s "$1" "$2" || return 1
-  if [[ -x "$1" ]]; then [[ -x "$2" ]]; else [[ ! -x "$2" ]]; fi
-}
+same_content() { [[ -f "$2" ]] && cmp -s "$1" "$2"; }
+same_mode() { [[ "$(stat -c %a "$1")" == "$(stat -c %a "$2")" ]]; }
 
 # Nomes das chaves cujo valor difere entre dois .env (sem imprimir valores)
 env_key_diff() {
@@ -69,7 +72,11 @@ for svc in "${SERVICES[@]}"; do
   changed=() removed=() recreate=""
 
   while read -r f; do
-    same_file "$B/repo/$svc/$f" "$dst/$f" && continue
+    if same_content "$B/repo/$svc/$f" "$dst/$f"; then
+      # So a permissao mudou: reinstala, mas nao recria container
+      same_mode "$B/repo/$svc/$f" "$dst/$f" || changed+=("$f(modo)")
+      continue
+    fi
     changed+=("$f")
     # Compose nao percebe mudanca em arquivo montado (ex.: unbound.conf).
     # Docs, scripts e o proprio compose nao exigem recriar o container.
@@ -147,7 +154,9 @@ rollback() {
 
 install_files() {
   local svc=$1 dst=$DOCKER/$1 f
-  tar -C "$B/repo/$svc" -cf - . | tar -C "$dst" -xf - --no-same-owner
+  # -p mantem 644/755 apesar do umask 077; --no-overwrite-dir nao mexe nas
+  # pastas que ja existem no Pi
+  tar -C "$B/repo/$svc" -cf - . | tar -C "$dst" -xpf - --no-same-owner --no-overwrite-dir
   for f in ${REMOVED_FILES[$svc]}; do rm -f "$dst/$f"; done
   install -m 600 "$B/env/$svc.env" "$dst/.env"
   if [[ -n "${CLIENTS[$svc]}" ]]; then
