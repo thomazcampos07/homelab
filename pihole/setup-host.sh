@@ -105,6 +105,23 @@ else
   fi
 fi
 
+# Agendamentos do usuario. Os scripts chegam com o deploy; enquanto o .env de
+# cada servico nao for restaurado, eles apenas falham sem efeito. A linha do
+# backup e instalada pelo backup/configure.sh.
+CRON_LINES=(
+  "*/5 * * * * /home/admin/docker/beszel/healthcheck-ping.sh"
+  "*/5 * * * * /home/admin/docker/wireguard/ddns-check.sh 2>&1 | systemd-cat -t ddns-check"
+)
+for line in "${CRON_LINES[@]}"; do
+  script=$(awk '{print $6}' <<<"$line")
+  if crontab -l 2>/dev/null | grep -qF "$script"; then
+    echo "==> Cron de $(basename "$script") ja existe, pulando"
+  else
+    echo "==> Agendando $(basename "$script") a cada 5 min"
+    (crontab -l 2>/dev/null || true; echo "$line") | crontab -
+  fi
+done
+
 echo
 echo "Sistema pronto. Reinicie para ativar o log2ram e depois suba o Pi-hole:"
 echo "  cd ~/docker/pihole   # recoloque o .env (do backup ou com PIHOLE_PASSWORD=...)"

@@ -58,7 +58,8 @@ o DuckDNS leva alguns minutos para se ajustar, e a tolerância do check absorve
 isso. Motivo da existência: em 2026 o container `duckdns` ficou 12 dias de pé
 sem atualizar o IP, e nada percebeu.
 
-O deploy entrega o script e a variável; o agendamento fica no cron do `admin`:
+O deploy entrega o script e a variável; o agendamento fica no cron do `admin`,
+instalado pelo `setup-host.sh` da pasta `pihole/`:
 
 ```bash
 */5 * * * * /home/admin/docker/wireguard/ddns-check.sh 2>&1 | systemd-cat -t ddns-check

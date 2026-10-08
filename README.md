@@ -108,12 +108,25 @@ that of the file on the Pi.
 
 ### Restore from scratch
 
-1. Flash Raspberry Pi OS (64-bit) with user `admin`.
+1. Flash Raspberry Pi OS Lite (64-bit) with Raspberry Pi Imager. The Imager
+   writes `user-data` and `network-config` on the card; they hold a password
+   hash and the Wi-Fi key, so they are not versioned. Choose:
+   - hostname `raspberrypi`, user `admin` with a new password
+   - Wi-Fi with country `BR`; time zone `America/Sao_Paulo`, keyboard `br`
+   - SSH on, with password authentication **and** the PC's public key
+   - Raspberry Pi Connect on, with a fresh auth key from
+     [connect.raspberrypi.com](https://connect.raspberrypi.com)
+
+   Same Pi board, same MAC, so the router still hands out `192.168.15.5`. On a
+   new board, move the router's DHCP reservation to the new MAC. The host key
+   changes on every install: on the PC, run `ssh-keygen -R 192.168.15.5`
+   before the first SSH.
 2. Copy every folder to `~/docker/`:
    ```bash
    git archive HEAD pihole wireguard beszel backup | ssh admin@192.168.15.5 'mkdir -p ~/docker && tar -x -C ~/docker'
    ```
-3. Prepare the OS: `~/docker/pihole/setup-host.sh`, then `sudo reboot`.
+3. Prepare the OS: `~/docker/pihole/setup-host.sh`, then `sudo reboot`. It
+   also pins Wi-Fi to 2.4 GHz and schedules the health and DDNS checks.
 4. Pull the state back from Google Drive (`.env` files, keys, data, crontab):
    see [`backup/`](backup/).
 5. Start each service following its README, beginning with
