@@ -103,6 +103,11 @@ a chave pública em `~/.ssh/authorized_keys`.
   deixar o servidor NTP do Pi-hole ativo só disputaria a porta 123.
 - **`FTLCONF_dns_interface: wlan0`** — o Pi está em Wi-Fi. Se migrar para cabo,
   trocar para `eth0`.
+- **Wi-Fi fixo em 2,4 GHz** (`band: "2.4GHz"` no `network-config`, aplicado
+  pelo `setup-host.sh`) — o 5 GHz do roteador usa um canal DFS, e o firmware da
+  operadora não deixa trocar. Quando o roteador cala esse canal, o Pi continua
+  associado mas sem tráfego até o lease do DHCP vencer: ficou ~2 h fora do ar
+  numa madrugada. Para DNS, 2,4 GHz sobra. Se mudar de roteador, reavaliar.
 
 ## Quem usa o Pi-hole
 

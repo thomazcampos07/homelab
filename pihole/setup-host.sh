@@ -79,6 +79,32 @@ else
   echo "    Aplicado (ativa apos reboot). Backup em $CMDLINE.bak"
 fi
 
+# O 5 GHz do roteador usa canal DFS, que o firmware da operadora nao deixa
+# trocar. Ao detectar radar o roteador cala esse canal, e o Pi fica associado
+# sem trafego ate o lease do DHCP vencer (~2 h fora do ar). Em 2,4 GHz isso nao
+# acontece, e para DNS a velocidade nao faz diferenca. O network-config e a
+# fonte da verdade: o cloud-init regenera a rede a partir dele a cada boot.
+NETCFG=/boot/firmware/network-config
+if [ ! -f "$NETCFG" ]; then
+  echo "==> $NETCFG nao encontrado, pulando Wi-Fi em 2,4 GHz"
+elif grep -qE '^\s*band:' "$NETCFG"; then
+  echo "==> Wi-Fi ja fixado em uma banda, pulando"
+else
+  echo "==> Fixando o Wi-Fi em 2,4 GHz"
+  sudo cp -p "$NETCFG" "$NETCFG.bak"
+  sudo sed -i 's/^\(\s*\)password: \(.*\)$/\1password: \2\n\1band: "2.4GHz"/' "$NETCFG"
+  if ! cloud-init schema -t network-config -c "$NETCFG" 2>/dev/null | grep -q '^Valid'; then
+    sudo cp -p "$NETCFG.bak" "$NETCFG"
+    echo "    network-config ficou invalido; backup restaurado, nada aplicado."
+  else
+    # Grava tambem na conexao ativa, sem reconectar: a sessao SSH passa pelo
+    # proprio Wi-Fi. Vale a partir da proxima conexao ou do reboot.
+    WIFI_CON=$(nmcli -g NAME,DEVICE connection show --active | grep ':wlan0$' | cut -d: -f1 || true)
+    [ -n "$WIFI_CON" ] && sudo nmcli connection modify "$WIFI_CON" 802-11-wireless.band bg
+    echo "    Aplicado (ativa apos reboot). Backup em $NETCFG.bak"
+  fi
+fi
+
 echo
 echo "Sistema pronto. Reinicie para ativar o log2ram e depois suba o Pi-hole:"
 echo "  cd ~/docker/pihole   # recoloque o .env (do backup ou com PIHOLE_PASSWORD=...)"
