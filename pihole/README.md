@@ -103,6 +103,11 @@ a chave pública em `~/.ssh/authorized_keys`.
   deixar o servidor NTP do Pi-hole ativo só disputaria a porta 123.
 - **`FTLCONF_dns_interface: wlan0`** — o Pi está em Wi-Fi. Se migrar para cabo,
   trocar para `eth0`.
+- **Raspberry Pi Connect mantido** (instalado pelo Imager, com terminal remoto
+  liberado) — acesso de reserva pela nuvem da Raspberry Pi, que funciona mesmo
+  com o WireGuard ou o DuckDNS fora do ar. O custo é que a conta Raspberry Pi
+  passa a dar acesso ao Pi; ela precisa de senha forte e verificação em duas
+  etapas.
 - **Wi-Fi fixo em 2,4 GHz** (`band: "2.4GHz"` no `network-config`, aplicado
   pelo `setup-host.sh`) — o 5 GHz do roteador usa um canal DFS, e o firmware da
   operadora não deixa trocar. Quando o roteador cala esse canal, o Pi continua

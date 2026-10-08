@@ -90,7 +90,8 @@ O script não se limita a dizer "estou ligado": ele consulta o DNS antes, e
 sinaliza falha se o Pi-hole não responder. Um Pi ligado com o DNS quebrado dá o
 mesmo prejuízo que um Pi desligado.
 
-Agendamento (cron do usuário, sem privilégios):
+Agendamento (cron do usuário, sem privilégios), instalado pelo `setup-host.sh`
+da pasta `pihole/`:
 
 ```
 */5 * * * * /home/admin/docker/beszel/healthcheck-ping.sh
