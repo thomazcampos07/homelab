@@ -59,6 +59,8 @@ containers. Isso é configurado pelo `setup-host.sh` da pasta
   máquina. Em bridge, mediria apenas a rede virtual do Docker.
 - **`docker.sock` somente leitura** — o agente só precisa listar containers e
   ler status. Acesso de escrita ao socket equivale a root no host.
+- **`APP_URL` no hub** — é o endereço que o Beszel põe nos links dos alertas.
+  Sem ele o link aponta para `http://localhost:8090`, que não abre no celular.
 - **Hub em bridge** — não há motivo para ele compartilhar a rede do host; a
   porta publicada basta.
 

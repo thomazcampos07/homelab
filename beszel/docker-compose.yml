@@ -4,6 +4,10 @@ services:
   beszel:
     container_name: beszel
     image: henrygd/beszel:0.21.0
+    environment:
+      # Endereco usado nos links dos alertas. Sem isso o Beszel manda
+      # http://localhost:8090, que nao abre de outro aparelho.
+      APP_URL: "http://192.168.15.5:8090"
     ports:
       - "8090:8090"
     volumes:
