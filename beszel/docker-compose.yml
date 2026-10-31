@@ -3,7 +3,7 @@ services:
   # ocupadas pelo Pi-hole (que roda em network_mode host).
   beszel:
     container_name: beszel
-    image: henrygd/beszel:0.21.0
+    image: henrygd/beszel:0.21.1
     environment:
       # Endereco usado nos links dos alertas. Sem isso o Beszel manda
       # http://localhost:8090, que nao abre de outro aparelho.
