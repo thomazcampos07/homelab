@@ -45,7 +45,7 @@ O painel fica em `http://192.168.15.5/admin`.
 4. Gerar o trust anchor do DNSSEC (não é versionado, cada instalação gera o seu):
    ```bash
    mkdir -p unbound/keys
-   docker run --rm -v "$PWD/unbound/keys:/keys"      --entrypoint unbound-anchor klutchell/unbound:v1.26.1 -a /keys/root.key
+   docker run --rm -v "$PWD/unbound/keys:/keys"      --entrypoint unbound-anchor klutchell/unbound:v1.26.2 -a /keys/root.key
    ```
    Sai com código 1 quando cria a chave — é o comportamento normal.
 5. Recolocar o `.env` (ver *Variáveis do `.env`*) e subir:
@@ -113,6 +113,11 @@ a chave pública em `~/.ssh/authorized_keys`.
   operadora não deixa trocar. Quando o roteador cala esse canal, o Pi continua
   associado mas sem tráfego até o lease do DHCP vencer: ficou ~2 h fora do ar
   numa madrugada. Para DNS, 2,4 GHz sobra. Se mudar de roteador, reavaliar.
+- **Power save do Wi-Fi desligado** (`wifi.powersave = 2` em
+  `/etc/NetworkManager/conf.d/`, aplicado pelo `setup-host.sh`) — com ele ligado,
+  o roteador segura os pacotes até o rádio do Pi acordar, o que soma latência às
+  consultas DNS. Fica no `conf.d` porque a conexão é regerada pelo cloud-init a
+  cada boot. Conferir com `iw dev wlan0 get power_save`.
 
 ## Quem usa o Pi-hole
 

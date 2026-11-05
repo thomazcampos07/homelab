@@ -105,6 +105,19 @@ else
   fi
 fi
 
+# Com power save, o radio do Pi cochila e o roteador segura os pacotes ate ele
+# acordar, o que soma latencia e oscilacao a cada consulta DNS que chega. O Pi
+# fica na tomada, entao a economia nao compensa. Vai no conf.d porque a conexao
+# e regerada pelo cloud-init a cada boot e herda este padrao (powersave: default).
+echo "==> Desligando o power save do Wi-Fi"
+sudo tee /etc/NetworkManager/conf.d/99-wifi-powersave.conf >/dev/null <<'CONF'
+[connection]
+wifi.powersave = 2
+CONF
+# O arquivo so vale na proxima conexao; o iw aplica agora, sem reconectar.
+sudo iw dev wlan0 set power_save off 2>/dev/null \
+  || echo "    wlan0 indisponivel; vale a partir da proxima conexao."
+
 # Agendamentos do usuario. Os scripts chegam com o deploy; enquanto o .env de
 # cada servico nao for restaurado, eles apenas falham sem efeito. A linha do
 # backup e instalada pelo backup/configure.sh.
